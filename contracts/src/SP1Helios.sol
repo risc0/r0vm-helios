@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.22;
 
-import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
 /// @title SP1Helios
 /// @notice An Ethereum beacon chain light client, built with SP1 and Helios.
@@ -31,7 +31,7 @@ contract SP1Helios {
     mapping(uint256 => bytes32) public syncCommittees;
 
     /// @notice The verification key for the SP1 Helios program.
-    bytes32 public heliosProgramVkey;
+    bytes32 public heliosImageID;
 
     /// @notice The deployed SP1 verifier contract.
     address public verifier;
@@ -59,7 +59,7 @@ contract SP1Helios {
         address guardian;
         uint256 head;
         bytes32 header;
-        bytes32 heliosProgramVkey;
+        bytes32 heliosImageId;
         uint256 secondsPerSlot;
         uint256 slotsPerEpoch;
         uint256 slotsPerPeriod;
@@ -85,7 +85,7 @@ contract SP1Helios {
         SLOTS_PER_EPOCH = params.slotsPerEpoch;
         SOURCE_CHAIN_ID = params.sourceChainId;
         syncCommittees[getSyncCommitteePeriod(params.head)] = params.syncCommitteeHash;
-        heliosProgramVkey = params.heliosProgramVkey;
+        heliosImageID = params.heliosImageId;
         headers[params.head] = params.header;
         executionStateRoots[params.head] = params.executionStateRoot;
         head = params.head;
@@ -94,11 +94,11 @@ contract SP1Helios {
     }
 
     /// @notice Updates the light client with a new header, execution state root, and sync committee (if changed)
-    /// @param proof The proof bytes for the SP1 proof.
-    /// @param publicValues The public commitments from the SP1 proof.
-    function update(bytes calldata proof, bytes calldata publicValues) external {
+    /// @param seal The seal bytes for the Risc0 proof.
+    /// @param journalData The committed journal of the Risc0 Proof.
+    function update(bytes calldata seal, bytes calldata journalData) external {
         // Parse the outputs from the committed public values associated with the proof.
-        ProofOutputs memory po = abi.decode(publicValues, (ProofOutputs));
+        ProofOutputs memory po = abi.decode(journalData, (ProofOutputs));
         if (po.newHead <= head) {
             revert SlotBehindHead(po.newHead);
         }
@@ -113,7 +113,7 @@ contract SP1Helios {
         }
 
         // Verify the proof with the associated public values. This will revert if proof invalid.
-        ISP1Verifier(verifier).verifyProof(heliosProgramVkey, publicValues, proof);
+        IRiscZeroVerifier(verifier).verify(seal, heliosImageID, sha256(journalData));
 
         // Check that the new header hasnt been set already.
         head = po.newHead;
@@ -169,6 +169,6 @@ contract SP1Helios {
 
     /// @notice Updates the Helios program verification key.
     function updateHeliosProgramVkey(bytes32 newVkey) external onlyGuardian {
-        heliosProgramVkey = newVkey;
+        heliosImageID = newVkey;
     }
 }
