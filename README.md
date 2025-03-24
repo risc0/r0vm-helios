@@ -5,7 +5,7 @@
 R0VM Helios verifies the consensus of a source chain in the execution environment of a destination chain. For example,
 you can run an R0VM Helios light client on Polygon that verifies Ethereum Mainnet's consensus.
 
-R0VM is a fork of [SP1 Helios](https://github.com/succinctlabs/sp1-helios).
+R0VM Helios is a fork of [SP1 Helios](https://github.com/succinctlabs/sp1-helios).
 
 ## Prerequisites
 
