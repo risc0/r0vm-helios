@@ -6,7 +6,7 @@ use helios_consensus_core::{
     apply_finality_update, apply_update, verify_finality_update, verify_update,
 };
 use risc0_zkvm::guest::env;
-use sp1_helios_primitives::types::{ProofInputs, ProofOutputs};
+use r0vm_helios_primitives::types::{ProofInputs, ProofOutputs};
 use tree_hash::TreeHash;
 
 risc0_zkvm::guest::entry!(main);

@@ -3,9 +3,9 @@ pragma solidity ^0.8.22;
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
-/// @title SP1Helios
-/// @notice An Ethereum beacon chain light client, built with SP1 and Helios.
-contract SP1Helios {
+/// @title R0VMHelios
+/// @notice An Ethereum beacon chain light client, built with R0VM and Helios.
+contract R0VMHelios {
     bytes32 public immutable GENESIS_VALIDATORS_ROOT;
     uint256 public immutable GENESIS_TIME;
     uint256 public immutable SECONDS_PER_SLOT;
@@ -30,10 +30,10 @@ contract SP1Helios {
     /// @notice Maps from a period to the hash for the sync committee.
     mapping(uint256 => bytes32) public syncCommittees;
 
-    /// @notice The verification key for the SP1 Helios program.
+    /// @notice The verification key for the R0VM Helios program.
     bytes32 public heliosImageID;
 
-    /// @notice The deployed SP1 verifier contract.
+    /// @notice The deployed R0VM verifier contract.
     address public verifier;
 
     /// @notice The address of the guardian
