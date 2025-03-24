@@ -1,11 +1,11 @@
 use anyhow::Result;
 use clap::{command, Parser};
 use helios_ethereum::rpc::ConsensusRpc;
+use risc0_zkvm::{default_prover, ExecutorEnv};
+use sp1_helios_methods::SP1_HELIOS_GUEST_ELF;
 use sp1_helios_primitives::types::ProofInputs;
 use sp1_helios_script::{get_checkpoint, get_client, get_latest_checkpoint, get_updates};
-use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 
-const ELF: &[u8] = include_bytes!("../../elf/sp1-helios-elf");
 #[derive(Parser, Debug, Clone)]
 #[command(about = "Get the genesis parameters from a block.")]
 pub struct GenesisArgs {
@@ -16,7 +16,6 @@ pub struct GenesisArgs {
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    setup_logger();
     let args = GenesisArgs::parse();
 
     // Get the current slot from the contract or fetch the latest checkpoint
@@ -42,12 +41,12 @@ async fn main() -> Result<()> {
     };
 
     // Write the inputs to the VM
-    let mut stdin = SP1Stdin::new();
-    stdin.write_slice(&serde_cbor::to_vec(&inputs)?);
+    let env = ExecutorEnv::builder()
+        .write_frame(&serde_cbor::to_vec(&inputs)?)
+        .build()?;
 
-    let prover_client = ProverClient::builder().cpu().build();
-    let (_, report) = prover_client.execute(ELF, &stdin).run()?;
-    println!("Execution Report: {:?}", report);
+    let info = default_prover().prove(env, SP1_HELIOS_GUEST_ELF)?;
+    println!("Execution Report: {:?}", info.stats);
 
     Ok(())
 }
