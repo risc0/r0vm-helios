@@ -12,6 +12,7 @@ import {AccessControlEnumerable} from
 /// It also provides functionality to verify and store Ethereum storage slot values.
 /// Updater permissions are fixed at contract creation time and cannot be modified afterward.
 contract R0VMHelios is AccessControlEnumerable {
+    /// @notice The genesis validators root for the beacon chain
     bytes32 public immutable GENESIS_VALIDATORS_ROOT;
 
     /// @notice The timestamp at which the beacon chain genesis block was processed
@@ -92,8 +93,8 @@ contract R0VMHelios is AccessControlEnumerable {
         uint256 slotsPerPeriod;
         uint256 sourceChainId;
         bytes32 syncCommitteeHash;
-        address verifier;
         address[] updaters;
+        address verifier;
     }
 
     event HeadUpdate(uint256 indexed slot, bytes32 indexed root);
@@ -153,6 +154,7 @@ contract R0VMHelios is AccessControlEnumerable {
     /// @notice Updates the light client with a new header, execution state root, and sync committee (if changed)
     /// @param seal The seal bytes for the Risc0 proof.
     /// @param journalData The committed journal of the Risc0 Proof.
+    /// @param fromHead The head slot to prove against
     function update(bytes calldata seal, bytes calldata journalData, uint256 fromHead)
         external
         onlyRole(UPDATER_ROLE)

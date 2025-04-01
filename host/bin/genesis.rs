@@ -3,10 +3,10 @@ use alloy_primitives::{Address, B256};
 use anyhow::Result;
 /// Generate genesis parameters for light client contract
 use clap::Parser;
-use risc0_zkvm::Digest;
-use serde::{Deserialize, Serialize};
 use r0vm_helios_methods::R0VM_HELIOS_GUEST_ID;
 use r0vm_helios_script::{get_checkpoint, get_client, get_latest_checkpoint};
+use risc0_zkvm::Digest;
+use serde::{Deserialize, Serialize};
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -28,7 +28,6 @@ pub struct GenesisConfig {
     pub execution_state_root: String,
     pub genesis_time: u64,
     pub genesis_validators_root: String,
-    pub guardian: String,
     pub head: u64,
     pub header: String,
     pub helios_image_id: String,
@@ -37,6 +36,7 @@ pub struct GenesisConfig {
     pub slots_per_period: u64,
     pub source_chain_id: u64,
     pub sync_committee_hash: String,
+    pub updaters: Vec<String>,
     pub verifier: String,
 }
 
@@ -130,10 +130,10 @@ pub async fn main() -> Result<()> {
     // If the GUARDIAN_ADDRESS is not set, or is empty, the deployer address is used as the guardian address.
     let guardian = match env::var("GUARDIAN_ADDRESS") {
         Ok(guardian_addr) if !guardian_addr.is_empty() => guardian_addr,
-        _ => format!("0x{:x}", deployer_address),
+        _ => deployer_address.to_string(),
     };
 
-    genesis_config.guardian = guardian;
+    genesis_config.updaters = vec![guardian];
 
     write_genesis_config(&workspace_root, &genesis_config)?;
 
