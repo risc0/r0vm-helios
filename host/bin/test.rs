@@ -7,10 +7,10 @@ use alloy_trie::TrieAccount;
 use anyhow::Result;
 use clap::{command, Parser};
 use helios_ethereum::rpc::ConsensusRpc;
-use risc0_zkvm::{default_prover, ExecutorEnv};
 use r0vm_helios_methods::R0VM_HELIOS_GUEST_ELF;
 use r0vm_helios_primitives::types::{ContractStorage, ProofInputs, StorageSlot};
 use r0vm_helios_script::{get_checkpoint, get_client, get_latest_checkpoint, get_updates};
+use risc0_zkvm::{default_prover, ExecutorEnv};
 
 #[derive(Parser, Debug, Clone)]
 #[command(about = "Get the genesis parameters from a block.")]
@@ -85,12 +85,15 @@ async fn main() -> Result<()> {
         },
     };
 
-    // Write the inputs to the VM
-    let env = ExecutorEnv::builder()
-        .write_frame(&serde_cbor::to_vec(&inputs)?)
-        .build()?;
-
-    let info = default_prover().prove(env, R0VM_HELIOS_GUEST_ELF)?;
+    let info = tokio::task::spawn_blocking(move || {
+        let env = ExecutorEnv::builder()
+            .write_frame(&serde_cbor::to_vec(&inputs)?)
+            .build()?;
+        default_prover().prove(env, R0VM_HELIOS_GUEST_ELF)
+    })
+    .await
+    .expect("prover panicked")
+    .unwrap();
     println!("Execution Report: {:?}", info.stats);
 
     Ok(())

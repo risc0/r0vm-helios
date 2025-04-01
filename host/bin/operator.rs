@@ -4,25 +4,22 @@ use alloy::{
     signers::local::PrivateKeySigner, sol,
 };
 use alloy_primitives::{B256, U256};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use helios_consensus_core::consensus_spec::MainnetConsensusSpec;
 use helios_ethereum::consensus::Inner;
 use helios_ethereum::rpc::http_rpc::HttpRpc;
 use helios_ethereum::rpc::ConsensusRpc;
 use log::{error, info};
-use reqwest::Url;
-use risc0_zkvm::{default_prover, ExecutorEnv, Prover, ProverOpts, Receipt};
 use r0vm_helios_methods::R0VM_HELIOS_GUEST_ELF;
 use r0vm_helios_primitives::types::{ContractStorage, ProofInputs};
 use r0vm_helios_script::*;
+use reqwest::Url;
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, Receipt};
 use std::env;
-use std::rc::Rc;
 use std::time::Duration;
 use tree_hash::TreeHash;
 
 struct R0VMHeliosOperator {
-    client: Rc<dyn Prover>,
-    // pk: R0VMProvingKey,
     wallet: EthereumWallet,
     rpc_url: Url,
     contract_address: Address,
@@ -81,7 +78,6 @@ impl R0VMHeliosOperator {
     pub async fn new() -> Self {
         dotenv::dotenv().ok();
 
-        let client = default_prover();
         let rpc_url = env::var("DEST_RPC_URL")
             .expect("DEST_RPC_URL not set")
             .parse()
@@ -97,7 +93,6 @@ impl R0VMHeliosOperator {
         let wallet = EthereumWallet::from(signer);
 
         Self {
-            client,
             wallet,
             rpc_url,
             contract_address,
@@ -112,7 +107,7 @@ impl R0VMHeliosOperator {
     ) -> Result<Option<Receipt>> {
         // Fetch required values.
         let provider = ProviderBuilder::new().on_http(self.rpc_url.clone());
-        let contract = R0VMHelios::new(self.contract_address, provider);
+        let contract = R0VMHelios::new(self.contract_address, &provider);
         let head: u64 = contract
             .head()
             .call()
@@ -185,14 +180,17 @@ impl R0VMHeliosOperator {
             },
         };
         let encoded_proof_inputs = serde_cbor::to_vec(&inputs)?;
-        let env = ExecutorEnv::builder()
-            .write_frame(&encoded_proof_inputs)
-            .build()?;
 
         // Generate proof.
-        let proof =
-            self.client
-                .prove_with_opts(env, R0VM_HELIOS_GUEST_ELF, &ProverOpts::groth16())?;
+        let proof = tokio::task::spawn_blocking(move || {
+            let env = ExecutorEnv::builder()
+                .write_frame(&encoded_proof_inputs)
+                .build()?;
+            default_prover().prove_with_opts(env, R0VM_HELIOS_GUEST_ELF, &ProverOpts::groth16())
+        })
+        .await
+        .unwrap()
+        .context("proving failed")?;
 
         info!("Attempting to update to new head block: {:?}", latest_block);
         Ok(Some(proof.receipt))
