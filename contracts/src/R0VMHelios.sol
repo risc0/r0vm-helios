@@ -115,7 +115,7 @@ contract R0VMHelios is AccessControlEnumerable {
     error PreviousHeadTooOld(uint256 slot);
     error NoUpdatersProvided();
 
-    /// @notice Initializes the RISC ZeroHelios contract with the provided parameters
+    /// @notice Initializes the RISC Zero Helios contract with the provided parameters
     /// @dev Sets up immutable contract state and grants the UPDATER_ROLE to the provided updaters
     /// @param params The initialization parameters
     constructor(InitParams memory params) {
