@@ -48,6 +48,34 @@ variables:
 | `DEST_CHAIN_ID`            | Chain ID for the destination chain                              |
 | `PRIVATE_KEY`              | Private key for the account that will be deploying the contract |
 
+#### Proving Backend Configuration
+
+The host supports proving with either the Bonsai and Boundless proving services.
+
+##### 🌳 Bonsai 🌳
+
+Set the following fields in the .env
+
+| Parameter                  | Description                                                     |
+|----------------------------|-----------------------------------------------------------------|
+| `BONSAI_API_URL`          |  API URL for Bonsai, most likely "https://api.bonsai.xyz/"       |
+| `BONSAI_API_KEY`          | API Key for Bonsai, contact Risc0 to obtain a key               |
+
+
+#####  🍓 Boundless 🍓
+
+Using Boundless will require interacting with the on-chain marketplace and the network of provers. This is handled with the following env vars
+
+| Parameter                  | Description                                                     |
+|----------------------------|-----------------------------------------------------------------|
+| `BOUNDLESS_MARKET_ADDRESS`  | Address of the BoundlessMarket contract (see https://docs.beboundless.xyz/deployments)   |
+| `SET_VERIFIER_ADDRESS`      | Address of the SetVerifier contract (see https://docs.beboundless.xyz/deployments)  |
+| `BOUNDLESS_PRIVATE_KEY`     | Private key of a funded account on the chain where the market is. This will pay proving costs  |
+| `BOUNDLESS_RPC_URL`         | RPC to the chain where the Boundless market is deployed                              |
+| `PINATA_JWT`                | JWT for Pinata IPFS pinning service. See https://docs.pinata.cloud/quickstart |
+| `IPFS_GATEWAY_URL`          | Gateway to IPFS likely via Pinata also. See https://docs.pinata.cloud/quickstart |
+
+
 #### Optional Parameters
 
 | Parameter          | Description                                                                            |
