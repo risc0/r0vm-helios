@@ -17,7 +17,7 @@ r0vm-helios-primitives = { path = "primitives" }
 
 # risc0 dependencies.
 risc0-build = { version = "2.0.1" }
-risc0-zkvm = { version = "2.0.1", features = ["unstable"] }
+risc0-zkvm = { version = "2.0.0", features = ["unstable"] }
 
 # helios
 helios = { git = "https://github.com/a16z/helios", tag = "0.8.3" }

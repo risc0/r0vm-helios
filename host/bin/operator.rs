@@ -5,14 +5,15 @@ use alloy::{
     signers::local::PrivateKeySigner,
     sol,
 };
-use alloy_primitives::{B256, U256};
-use anyhow::Result;
+use alloy_primitives::{address, b256, B256, U256};
+use alloy_trie::TrieAccount;
+use anyhow::{Context, Result};
 use helios_consensus_core::consensus_spec::MainnetConsensusSpec;
 use helios_ethereum::consensus::Inner;
 use helios_ethereum::rpc::http_rpc::HttpRpc;
 use helios_ethereum::rpc::ConsensusRpc;
 use log::{error, info};
-use r0vm_helios_primitives::types::{ContractStorage, ProofInputs};
+use r0vm_helios_primitives::types::{ContractStorage, ProofInputs, StorageSlot};
 use r0vm_helios_script::*;
 use reqwest::Url;
 use risc0_zkvm::Receipt;
@@ -166,6 +167,26 @@ impl R0VMHeliosOperator {
             }
         }
 
+        // TEST
+        let contract_address = address!("0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5"); // Across Eth spoke v2
+        let storage_slot =
+            b256!("0000000000000000000000000000000000000000000000000000000000000869");
+
+        let block_hash = *finality_update
+            .finalized_header()
+            .execution()
+            .unwrap()
+            .block_hash();
+
+        let provider = ProviderBuilder::new()
+            .connect(&std::env::var("SOURCE_EXECUTION_RPC_URL")?)
+            .await?;
+        let proof = provider
+            .get_proof(contract_address, vec![storage_slot])
+            .block_id(block_hash.into())
+            .await
+            .context("get_proof failed")?;
+
         // Create program inputs
         let expected_current_slot = client.expected_current_slot();
         let inputs = ProofInputs {
@@ -175,7 +196,21 @@ impl R0VMHeliosOperator {
             store: client.store.clone(),
             genesis_root: client.config.chain.genesis_root,
             forks: client.config.forks.clone(),
-            contract_storage_slots: ContractStorage::default(), // TODO: Fill this in with contract storage slots
+            contract_storage_slots: ContractStorage {
+                address: contract_address,
+                expected_value: TrieAccount {
+                    nonce: proof.nonce,
+                    balance: proof.balance,
+                    storage_root: proof.storage_hash,
+                    code_hash: proof.code_hash,
+                },
+                mpt_proof: proof.account_proof.clone(),
+                storage_slots: vec![StorageSlot {
+                    key: storage_slot,
+                    expected_value: proof.storage_proof[0].value,
+                    mpt_proof: proof.storage_proof[0].proof.clone(),
+                }],
+            },
         };
         let encoded_proof_inputs = serde_cbor::to_vec(&inputs)?;
 

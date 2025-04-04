@@ -79,9 +79,7 @@ pub fn main() {
         .expect("Execution payload doesn't exist.")
         .state_root();
 
-    // TOOD: Skipping state slot proof verification for now
-    // let verified_slots = verify_storage_slot_proofs(execution_state_root, contract_storage_slots);
-    let verified_slots = Vec::new();
+    let verified_slots = verify_storage_slot_proofs(execution_state_root, contract_storage_slots);
 
     // 4. Commit new state root, header, and sync committee for usage in the on-chain contract
     let header: B256 = store.finalized_header.beacon().tree_hash_root();

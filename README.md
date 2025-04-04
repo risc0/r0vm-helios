@@ -113,7 +113,7 @@ When the script completes, take note of the light client contract address printe
 To run the operator, which generates proofs and keeps the light client updated with chain state:
 
 ```bash
-RUST_LOG=info cargo run --release --bin operator
+RUST_LOG=debug cargo run --release --bin operator
 ```
 
 If successful, you should see logs indicating that the consensus state is being updated:
