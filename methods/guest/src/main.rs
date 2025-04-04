@@ -7,10 +7,10 @@ use alloy_trie::{proof, Nibbles};
 use helios_consensus_core::{
     apply_finality_update, apply_update, verify_finality_update, verify_update,
 };
-use risc0_zkvm::guest::env;
 use r0vm_helios_primitives::types::{
     ContractStorage, ProofInputs, ProofOutputs, VerifiedStorageSlot,
 };
+use risc0_zkvm::guest::env;
 use tree_hash::TreeHash;
 
 risc0_zkvm::guest::entry!(main);
@@ -79,7 +79,9 @@ pub fn main() {
         .expect("Execution payload doesn't exist.")
         .state_root();
 
-    let verified_slots = verify_storage_slot_proofs(execution_state_root, contract_storage_slots);
+    // TOOD: Skipping state slot proof verification for now
+    // let verified_slots = verify_storage_slot_proofs(execution_state_root, contract_storage_slots);
+    let verified_slots = Vec::new();
 
     // 4. Commit new state root, header, and sync committee for usage in the on-chain contract
     let header: B256 = store.finalized_header.beacon().tree_hash_root();

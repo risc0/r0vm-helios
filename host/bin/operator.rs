@@ -1,23 +1,26 @@
-use alloy::providers::Provider;
 use alloy::{
-    network::EthereumWallet, primitives::Address, providers::ProviderBuilder,
-    signers::local::PrivateKeySigner, sol,
+    network::EthereumWallet,
+    primitives::Address,
+    providers::{Provider, ProviderBuilder},
+    signers::local::PrivateKeySigner,
+    sol,
 };
 use alloy_primitives::{B256, U256};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use helios_consensus_core::consensus_spec::MainnetConsensusSpec;
 use helios_ethereum::consensus::Inner;
 use helios_ethereum::rpc::http_rpc::HttpRpc;
 use helios_ethereum::rpc::ConsensusRpc;
 use log::{error, info};
-use r0vm_helios_methods::R0VM_HELIOS_GUEST_ELF;
 use r0vm_helios_primitives::types::{ContractStorage, ProofInputs};
 use r0vm_helios_script::*;
 use reqwest::Url;
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, Receipt};
+use risc0_zkvm::Receipt;
 use std::env;
 use std::time::Duration;
 use tree_hash::TreeHash;
+
+mod proving_backends;
 
 struct R0VMHeliosOperator {
     wallet: EthereumWallet,
@@ -172,28 +175,21 @@ impl R0VMHeliosOperator {
             store: client.store.clone(),
             genesis_root: client.config.chain.genesis_root,
             forks: client.config.forks.clone(),
-            contract_storage_slots: ContractStorage {
-                address: todo!(),
-                expected_value: todo!(),
-                mpt_proof: todo!(),
-                storage_slots: todo!(),
-            },
+            contract_storage_slots: ContractStorage::default(), // TODO: Fill this in with contract storage slots
         };
         let encoded_proof_inputs = serde_cbor::to_vec(&inputs)?;
 
+        // write in frame format, with a u32 LE length prefix
+        let mut input = Vec::new();
+        let len = encoded_proof_inputs.len() as u32;
+        input.extend_from_slice(&len.to_le_bytes());
+        input.extend_from_slice(&encoded_proof_inputs);
+
         // Generate proof.
-        let proof = tokio::task::spawn_blocking(move || {
-            let env = ExecutorEnv::builder()
-                .write_frame(&encoded_proof_inputs)
-                .build()?;
-            default_prover().prove_with_opts(env, R0VM_HELIOS_GUEST_ELF, &ProverOpts::groth16())
-        })
-        .await
-        .unwrap()
-        .context("proving failed")?;
+        let receipt = get_proof(input).await?;
 
         info!("Attempting to update to new head block: {:?}", latest_block);
-        Ok(Some(proof.receipt))
+        Ok(Some(receipt))
     }
 
     /// Relay an update proof to the R0VM Helios contract.
@@ -201,7 +197,6 @@ impl R0VMHeliosOperator {
         let seal = risc0_ethereum_contracts::encode_seal(&proof)?;
 
         let wallet_filler = ProviderBuilder::new()
-            .with_recommended_fillers()
             .wallet(self.wallet.clone())
             .on_http(self.rpc_url.clone());
         let contract = R0VMHelios::new(self.contract_address, wallet_filler.clone());
@@ -284,6 +279,25 @@ impl R0VMHeliosOperator {
             tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
         }
     }
+}
+
+/// Fetch the Risc0 proof using a proving strategy defined by env vars
+async fn get_proof(input: Vec<u8>) -> Result<Receipt> {
+    Ok(
+        match std::env::var("RISC0_PROVER").unwrap_or_default().as_str() {
+            "bonsai" => {
+                info!("Proving with Bonsai");
+                proving_backends::bonsai::get_proof(input).await?
+            }
+            "boundless" => {
+                info!("Proving with Boundless");
+                proving_backends::boundless::get_proof(input).await?
+            }
+            _ => {
+                panic!("Only Bonsai and Boundless proving strategies are supported");
+            }
+        },
+    )
 }
 
 #[tokio::main]
