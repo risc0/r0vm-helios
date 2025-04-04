@@ -58,8 +58,8 @@ Set the following fields in the .env
 
 | Parameter                  | Description                                                     |
 |----------------------------|-----------------------------------------------------------------|
-| `BONSAI_API_URL`          |  API URL for Bonsai, most likely "https://api.bonsai.xyz/"       |
-| `BONSAI_API_KEY`          | API Key for Bonsai, contact Risc0 to obtain a key               |
+| `BONSAI_API_URL`           |  API URL for Bonsai, most likely "https://api.bonsai.xyz/"      |
+| `BONSAI_API_KEY`           | API Key for Bonsai, contact Risc0 to obtain a key               |
 
 
 #####  🍓 Boundless 🍓
@@ -103,6 +103,10 @@ When the script completes, take note of the light client contract address printe
 | Parameter          | Description                                   |
 |--------------------|-----------------------------------------------|
 | `CONTRACT_ADDRESS` | Address of the light client contract deployed |
+
+> [!IMPORANT]
+> You will need to re-deploy the contracts if you make any changes to the RISC Zero guest program or proof verification will fail.
+> This is because the guest program ID is set in the contract constructor
 
 ### 4. Run Light Client
 
