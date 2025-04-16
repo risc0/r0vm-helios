@@ -48,6 +48,34 @@ variables:
 | `DEST_CHAIN_ID`            | Chain ID for the destination chain                              |
 | `PRIVATE_KEY`              | Private key for the account that will be deploying the contract |
 
+#### Proving Backend Configuration
+
+The host supports proving with either the Bonsai and Boundless proving services.
+
+##### 🌳 Bonsai 🌳
+
+Set the following fields in the .env
+
+| Parameter                  | Description                                                     |
+|----------------------------|-----------------------------------------------------------------|
+| `BONSAI_API_URL`           |  API URL for Bonsai, most likely "https://api.bonsai.xyz/"      |
+| `BONSAI_API_KEY`           | API Key for Bonsai, contact Risc0 to obtain a key               |
+
+
+#####  🍓 Boundless 🍓
+
+Using Boundless will require interacting with the on-chain marketplace and the network of provers. This is handled with the following env vars
+
+| Parameter                  | Description                                                     |
+|----------------------------|-----------------------------------------------------------------|
+| `BOUNDLESS_MARKET_ADDRESS`  | Address of the BoundlessMarket contract (see https://docs.beboundless.xyz/deployments)   |
+| `SET_VERIFIER_ADDRESS`      | Address of the SetVerifier contract (see https://docs.beboundless.xyz/deployments)  |
+| `BOUNDLESS_PRIVATE_KEY`     | Private key of a funded account on the chain where the market is. This will pay proving costs  |
+| `BOUNDLESS_RPC_URL`         | RPC to the chain where the Boundless market is deployed                              |
+| `PINATA_JWT`                | JWT for Pinata IPFS pinning service. See https://docs.pinata.cloud/quickstart |
+| `IPFS_GATEWAY_URL`          | Gateway to IPFS likely via Pinata also. See https://docs.pinata.cloud/quickstart |
+
+
 #### Optional Parameters
 
 | Parameter          | Description                                                                            |
@@ -76,12 +104,16 @@ When the script completes, take note of the light client contract address printe
 |--------------------|-----------------------------------------------|
 | `CONTRACT_ADDRESS` | Address of the light client contract deployed |
 
+> [!IMPORANT]
+> You will need to re-deploy the contracts if you make any changes to the RISC Zero guest program or proof verification will fail.
+> This is because the guest program ID is set in the contract constructor
+
 ### 4. Run Light Client
 
 To run the operator, which generates proofs and keeps the light client updated with chain state:
 
 ```bash
-RUST_LOG=info cargo run --release --bin operator
+RUST_LOG=debug cargo run --release --bin operator
 ```
 
 If successful, you should see logs indicating that the consensus state is being updated:

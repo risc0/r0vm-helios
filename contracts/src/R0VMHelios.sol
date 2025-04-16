@@ -7,7 +7,7 @@ import {AccessControlEnumerable} from
 
 /// @title R0VMHelios
 /// @notice An Ethereum beacon chain light client, built with R0VM and Helios.
-/// @dev This contract uses SP1 zero-knowledge proofs to verify updates to the Ethereum beacon chain state.
+/// @dev This contract uses RISC Zero zero-knowledge proofs to verify updates to the Ethereum beacon chain state.
 /// The contract stores the latest verified beacon chain header, execution state root, and sync committee information.
 /// It also provides functionality to verify and store Ethereum storage slot values.
 /// Updater permissions are fixed at contract creation time and cannot be modified afterward.
@@ -67,7 +67,7 @@ contract R0VMHelios is AccessControlEnumerable {
         address contractAddress;
     }
 
-    /// @notice The outputs from a verified SP1 proof
+    /// @notice The outputs from a verified RISC Zero proof
     struct ProofOutputs {
         bytes32 executionStateRoot;
         bytes32 newHeader;
@@ -80,7 +80,7 @@ contract R0VMHelios is AccessControlEnumerable {
         StorageSlot[] slots;
     }
 
-    /// @notice Parameters for initializing the SP1Helios contract
+    /// @notice Parameters for initializing the RISC ZeroHelios contract
     struct InitParams {
         bytes32 executionStateRoot;
         uint256 genesisTime;
@@ -115,7 +115,7 @@ contract R0VMHelios is AccessControlEnumerable {
     error PreviousHeadTooOld(uint256 slot);
     error NoUpdatersProvided();
 
-    /// @notice Initializes the SP1Helios contract with the provided parameters
+    /// @notice Initializes the RISC Zero Helios contract with the provided parameters
     /// @dev Sets up immutable contract state and grants the UPDATER_ROLE to the provided updaters
     /// @param params The initialization parameters
     constructor(InitParams memory params) {
