@@ -7,6 +7,7 @@ use boundless_market::{
     input::InputBuilder,
     storage::storage_provider_from_env,
 };
+use core::time;
 use log::info;
 use r0vm_helios_methods::{R0VM_HELIOS_GUEST_ELF, R0VM_HELIOS_GUEST_ID};
 use risc0_zkvm::{
@@ -31,6 +32,31 @@ pub async fn get_proof(input: Vec<u8>) -> Result<Receipt> {
         .unwrap();
     let rpc_url = env::var("BOUNDLESS_RPC_URL")
         .expect("BOUNDLESS_RPC_URL not set")
+        .parse()
+        .unwrap();
+
+    let lock_stake: String = env::var("LOCK_STAKE")
+        .expect("LOCK_STAKE not set")
+        .parse()
+        .unwrap();
+    let ramp_up = env::var("RAMP_UP")
+        .expect("RAMP_UP not set")
+        .parse()
+        .unwrap();
+    let min_price_per_mcycle: String = env::var("MIN_PRICE_PER_MCYCLE")
+        .expect("MIN_PRICE_PER_MCYCLE not set")
+        .parse()
+        .unwrap();
+    let max_price_per_mcycle: String = env::var("MAX_PRICE_PER_MCYCLE")
+        .expect("MAX_PRICE_PER_MCYCLE not set")
+        .parse()
+        .unwrap();
+    let timeout = env::var("TIMEOUT")
+        .expect("TIMEOUT not set")
+        .parse()
+        .unwrap();
+    let lock_timeout = env::var("LOCK_TIMEOUT")
+        .expect("LOCK_TIMEOUT not set")
         .parse()
         .unwrap();
 
@@ -101,28 +127,33 @@ pub async fn get_proof(input: Vec<u8>) -> Result<Receipt> {
     let request = ProofRequestBuilder::new()
         .with_image_url(image_url.to_string())
         .with_input(request_input)
-        .with_requirements(Requirements::new(
-            R0VM_HELIOS_GUEST_ID,
-            Predicate::digest_match(journal.digest()),
-        ))
+        .with_requirements(
+            Requirements::new(
+                R0VM_HELIOS_GUEST_ID,
+                Predicate::digest_match(journal.digest()),
+            )
+            .with_groth16_proof(), // For this test ensure no batching so we can use the proof directly
+        )
         .with_offer(
             Offer::default()
+                .with_lock_stake(parse_ether(&lock_stake)?)
                 // The market uses a reverse Dutch auction mechanism to match requests with provers.
                 // Each request has a price range that a prover can bid on. One way to set the price
                 // is to choose a desired (min and max) price per million cycles and multiply it
                 // by the number of cycles. Alternatively, you can use the `with_min_price` and
                 // `with_max_price` methods to set the price directly.
-                .with_min_price_per_mcycle(parse_ether("0.000001")?, mcycles_count)
+                .with_min_price_per_mcycle(parse_ether(&min_price_per_mcycle)?, mcycles_count)
                 // NOTE: If your offer is not being accepted, try increasing the max price.
-                .with_max_price_per_mcycle(parse_ether("0.000002")?, mcycles_count)
+                .with_max_price_per_mcycle(parse_ether(&max_price_per_mcycle)?, mcycles_count)
                 // The timeout is the maximum number of blocks the request can stay
                 // unfulfilled in the market before it expires. If a prover locks in
                 // the request and does not fulfill it before the timeout, the prover can be
                 // slashed.
-                .with_timeout(1000)
+                .with_timeout(timeout)
                 // The lock timeout is the maximum number of blocks a prover can lock an order
                 // for before being slashed
-                .with_lock_timeout(1000),
+                .with_lock_timeout(lock_timeout)
+                .with_ramp_up_period(ramp_up),
         )
         .build()
         .unwrap();
@@ -135,7 +166,7 @@ pub async fn get_proof(input: Vec<u8>) -> Result<Receipt> {
     // Wait for the request to be fulfilled by the market, returning the journal and seal.
     info!("Waiting for 0x{request_id:x} to be fulfilled");
     let (_journal, seal) = boundless_client
-        .wait_for_request_fulfillment(request_id, Duration::from_secs(5), expires_at)
+        .wait_for_request_fulfillment(request_id, Duration::from_secs(10), expires_at)
         .await?;
     info!("Request 0x{request_id:x} fulfilled");
 
