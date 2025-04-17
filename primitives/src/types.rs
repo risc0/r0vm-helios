@@ -57,6 +57,7 @@ sol! {
         uint256 prevHead;
         bytes32 syncCommitteeHash;
         bytes32 startSyncCommitteeHash;
+        bytes32 genesisRoot;
         VerifiedStorageSlot[] slots;
     }
 }

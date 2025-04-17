@@ -136,6 +136,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
 
@@ -202,6 +203,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
         bytes memory publicValues = abi.encode(po);
@@ -260,6 +262,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: syncCommitteeHash,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
 
@@ -319,6 +322,7 @@ contract R0VMHeliosTest is Test {
             prevHead: nonExistentHead,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: bytes32(0),
+            genesisRoot: bytes32(0),
             slots: slots
         });
 
@@ -347,6 +351,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
 
@@ -374,6 +379,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
 
@@ -402,6 +408,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: wrongSyncCommitteeHash, // Wrong hash
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
 
@@ -417,6 +424,41 @@ contract R0VMHeliosTest is Test {
                 R0VMHelios.SyncCommitteeStartMismatch.selector,
                 wrongSyncCommitteeHash,
                 INITIAL_SYNC_COMMITTEE_HASH
+            )
+        );
+        helios.update(proof, publicValues, INITIAL_HEAD);
+    }
+
+    function testUpdateWithGenesisRootMismatch() public {
+        R0VMHelios.StorageSlot[] memory slots = new R0VMHelios.StorageSlot[](0); // No storage slots for this test
+
+        bytes32 wrongGenesisRoot = bytes32(uint256(999));
+
+        R0VMHelios.ProofOutputs memory po = R0VMHelios.ProofOutputs({
+            executionStateRoot: bytes32(0),
+            newHeader: bytes32(0),
+            nextSyncCommitteeHash: bytes32(0),
+            newHead: INITIAL_HEAD + 1,
+            prevHeader: INITIAL_HEADER,
+            prevHead: INITIAL_HEAD,
+            syncCommitteeHash: bytes32(0),
+            startSyncCommitteeHash: bytes32(0),
+            genesisRoot: wrongGenesisRoot, // Mismatch with the initial setup
+            slots: slots
+        });
+
+        bytes memory publicValues = abi.encode(po);
+        bytes memory proof = new bytes(0);
+
+        // Set block timestamp to be valid for the update
+        vm.warp(helios.slotTimestamp(INITIAL_HEAD) + 1 hours);
+
+        vm.prank(initialUpdater);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                R0VMHelios.GenesisValidatorsRootMismatch.selector,
+                wrongGenesisRoot,
+                GENESIS_VALIDATORS_ROOT
             )
         );
         helios.update(proof, publicValues, INITIAL_HEAD);
@@ -440,6 +482,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: slots
         });
         bytes memory publicValues = abi.encode(po);
@@ -578,6 +621,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: emptySlots
         });
 
@@ -629,6 +673,7 @@ contract R0VMHeliosTest is Test {
             prevHead: prevHead,
             syncCommitteeHash: newSyncCommitteeHash,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH, // This must match the sync committee from the initial setup
+            genesisRoot: GENESIS_VALIDATORS_ROOT,
             slots: emptySlots
         });
 
