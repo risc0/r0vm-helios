@@ -77,6 +77,7 @@ contract R0VMHelios is AccessControlEnumerable {
         uint256 prevHead;
         bytes32 syncCommitteeHash;
         bytes32 startSyncCommitteeHash;
+        bytes32 genesisRoot;
         StorageSlot[] slots;
     }
 
@@ -114,6 +115,7 @@ contract R0VMHelios is AccessControlEnumerable {
     error PreviousHeadNotSet(uint256 slot);
     error PreviousHeadTooOld(uint256 slot);
     error NoUpdatersProvided();
+    error GenesisValidatorsRootMismatch(bytes32 given, bytes32 expected);
 
     /// @notice Initializes the SP1Helios contract with the provided parameters
     /// @dev Sets up immutable contract state and grants the UPDATER_ROLE to the provided updaters
@@ -172,6 +174,9 @@ contract R0VMHelios is AccessControlEnumerable {
         ProofOutputs memory po = abi.decode(journalData, (ProofOutputs));
         if (po.newHead <= fromHead) {
             revert SlotBehindHead(po.newHead);
+        }
+        if (po.genesisRoot != GENESIS_VALIDATORS_ROOT) {
+            revert GenesisValidatorsRootMismatch(po.genesisRoot, GENESIS_VALIDATORS_ROOT);
         }
 
         uint256 currentPeriod = getSyncCommitteePeriod(fromHead);
