@@ -4,6 +4,7 @@ use anyhow::Result;
 /// Generate genesis parameters for light client contract
 use clap::Parser;
 use r0vm_helios_methods::R0VM_HELIOS_GUEST_ID;
+use r0vm_helios_primitives::utils::compute_chain_commitment;
 use r0vm_helios_script::{get_checkpoint, get_client, get_latest_checkpoint};
 use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
@@ -27,7 +28,7 @@ pub struct GenesisArgs {
 pub struct GenesisConfig {
     pub execution_state_root: String,
     pub genesis_time: u64,
-    pub genesis_validators_root: String,
+    pub chain_commitment: String,
     pub head: u64,
     pub header: String,
     pub helios_image_id: String,
@@ -99,7 +100,10 @@ pub async fn main() -> Result<()> {
     // Read the Genesis config from the contracts directory.
     let mut genesis_config = get_existing_genesis_config(&workspace_root)?;
 
-    genesis_config.genesis_validators_root = format!("0x{:x}", genesis_root);
+    genesis_config.chain_commitment = format!(
+        "0x{:x}",
+        compute_chain_commitment(genesis_root, &helios_client.config.forks)?
+    );
     genesis_config.genesis_time = genesis_time;
     genesis_config.seconds_per_slot = SECONDS_PER_SLOT;
     genesis_config.slots_per_period = SLOTS_PER_PERIOD;

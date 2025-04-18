@@ -4720,6 +4720,7 @@ dependencies = [
  "alloy-trie",
  "helios-consensus-core",
  "serde",
+ "serde_cbor",
 ]
 
 [[package]]

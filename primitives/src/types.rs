@@ -13,7 +13,7 @@ pub struct StorageSlot {
     pub mpt_proof: Vec<Bytes>, // contract-specific MPT proof
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ContractStorage {
     pub address: Address,
     pub expected_value: TrieAccount,
@@ -57,7 +57,7 @@ sol! {
         uint256 prevHead;
         bytes32 syncCommitteeHash;
         bytes32 startSyncCommitteeHash;
-        bytes32 genesisRoot;
+        bytes32 chainCommitment;
         VerifiedStorageSlot[] slots;
     }
 }

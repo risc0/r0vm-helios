@@ -14,7 +14,7 @@ contract R0VMHeliosTest is Test {
     address initialUpdater = address(0x2);
 
     // Constants for test setup
-    bytes32 constant GENESIS_VALIDATORS_ROOT = bytes32(uint256(1));
+    bytes32 constant CHAIN_COMMITMENT = bytes32(uint256(1));
     uint256 constant GENESIS_TIME = 1606824023; // Dec 1, 2020
     uint256 constant SECONDS_PER_SLOT = 12;
     uint256 constant SLOTS_PER_EPOCH = 32;
@@ -36,7 +36,7 @@ contract R0VMHeliosTest is Test {
         R0VMHelios.InitParams memory params = R0VMHelios.InitParams({
             executionStateRoot: INITIAL_EXECUTION_STATE_ROOT,
             genesisTime: GENESIS_TIME,
-            genesisValidatorsRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             head: INITIAL_HEAD,
             header: INITIAL_HEADER,
             heliosImageId: HELIOS_IMAGE_ID,
@@ -53,7 +53,7 @@ contract R0VMHeliosTest is Test {
     }
 
     function testInitialization() public view {
-        assertEq(helios.GENESIS_VALIDATORS_ROOT(), GENESIS_VALIDATORS_ROOT);
+        assertEq(helios.CHAIN_COMMITMENT(), CHAIN_COMMITMENT);
         assertEq(helios.GENESIS_TIME(), GENESIS_TIME);
         assertEq(helios.SECONDS_PER_SLOT(), SECONDS_PER_SLOT);
         assertEq(helios.SLOTS_PER_EPOCH(), SLOTS_PER_EPOCH);
@@ -136,7 +136,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
 
@@ -169,7 +169,7 @@ contract R0VMHeliosTest is Test {
         R0VMHelios.InitParams memory params = R0VMHelios.InitParams({
             executionStateRoot: INITIAL_EXECUTION_STATE_ROOT,
             genesisTime: GENESIS_TIME,
-            genesisValidatorsRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             head: INITIAL_HEAD,
             header: INITIAL_HEADER,
             heliosImageId: HELIOS_IMAGE_ID,
@@ -203,7 +203,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
         bytes memory publicValues = abi.encode(po);
@@ -262,7 +262,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: syncCommitteeHash,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
 
@@ -322,7 +322,7 @@ contract R0VMHeliosTest is Test {
             prevHead: nonExistentHead,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: bytes32(0),
-            genesisRoot: bytes32(0),
+            chainCommitment: bytes32(0),
             slots: slots
         });
 
@@ -351,7 +351,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
 
@@ -379,7 +379,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
 
@@ -408,7 +408,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: wrongSyncCommitteeHash, // Wrong hash
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
 
@@ -429,10 +429,10 @@ contract R0VMHeliosTest is Test {
         helios.update(proof, publicValues, INITIAL_HEAD);
     }
 
-    function testUpdateWithGenesisRootMismatch() public {
+    function testUpdateWithChainCommitmentMismatch() public {
         R0VMHelios.StorageSlot[] memory slots = new R0VMHelios.StorageSlot[](0); // No storage slots for this test
 
-        bytes32 wrongGenesisRoot = bytes32(uint256(999));
+        bytes32 wrongchainCommitment = bytes32(uint256(999));
 
         R0VMHelios.ProofOutputs memory po = R0VMHelios.ProofOutputs({
             executionStateRoot: bytes32(0),
@@ -443,7 +443,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: bytes32(0),
             startSyncCommitteeHash: bytes32(0),
-            genesisRoot: wrongGenesisRoot, // Mismatch with the initial setup
+            chainCommitment: wrongchainCommitment, // Mismatch with the initial setup
             slots: slots
         });
 
@@ -456,9 +456,9 @@ contract R0VMHeliosTest is Test {
         vm.prank(initialUpdater);
         vm.expectRevert(
             abi.encodeWithSelector(
-                R0VMHelios.GenesisValidatorsRootMismatch.selector,
-                wrongGenesisRoot,
-                GENESIS_VALIDATORS_ROOT
+                R0VMHelios.ChainCommitmentMismatch.selector,
+                wrongchainCommitment,
+                CHAIN_COMMITMENT
             )
         );
         helios.update(proof, publicValues, INITIAL_HEAD);
@@ -482,7 +482,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: slots
         });
         bytes memory publicValues = abi.encode(po);
@@ -503,7 +503,7 @@ contract R0VMHeliosTest is Test {
         R0VMHelios.InitParams memory params = R0VMHelios.InitParams({
             executionStateRoot: INITIAL_EXECUTION_STATE_ROOT,
             genesisTime: GENESIS_TIME,
-            genesisValidatorsRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             head: INITIAL_HEAD,
             header: INITIAL_HEADER,
             heliosImageId: HELIOS_IMAGE_ID,
@@ -534,7 +534,7 @@ contract R0VMHeliosTest is Test {
         R0VMHelios.InitParams memory params = R0VMHelios.InitParams({
             executionStateRoot: INITIAL_EXECUTION_STATE_ROOT,
             genesisTime: GENESIS_TIME,
-            genesisValidatorsRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             head: INITIAL_HEAD,
             header: INITIAL_HEADER,
             heliosImageId: HELIOS_IMAGE_ID,
@@ -621,7 +621,7 @@ contract R0VMHeliosTest is Test {
             prevHead: INITIAL_HEAD,
             syncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH,
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: emptySlots
         });
 
@@ -673,7 +673,7 @@ contract R0VMHeliosTest is Test {
             prevHead: prevHead,
             syncCommitteeHash: newSyncCommitteeHash,
             startSyncCommitteeHash: INITIAL_SYNC_COMMITTEE_HASH, // This must match the sync committee from the initial setup
-            genesisRoot: GENESIS_VALIDATORS_ROOT,
+            chainCommitment: CHAIN_COMMITMENT,
             slots: emptySlots
         });
 
