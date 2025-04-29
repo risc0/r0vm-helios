@@ -1,18 +1,17 @@
 use alloy::signers::local::PrivateKeySigner;
-use alloy_primitives::Address;
+use alloy_primitives::{Address, B256};
 use anyhow::Result;
 /// Generate genesis parameters for light client contract
 use clap::Parser;
+use r0vm_helios_methods::R0VM_HELIOS_GUEST_ID;
+use r0vm_helios_script::{get_checkpoint, get_client, get_latest_checkpoint};
+use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
-use sp1_helios_script::{get_checkpoint, get_client, get_latest_checkpoint};
-use sp1_sdk::{utils, HashableKey, Prover, ProverClient};
 use std::{
     env, fs,
     path::{Path, PathBuf},
 };
 use tree_hash::TreeHash;
-
-const HELIOS_ELF: &[u8] = include_bytes!("../../elf/sp1-helios-elf");
 
 #[derive(Parser, Debug, Clone)]
 #[command(about = "Get the genesis parameters from a block.")]
@@ -29,22 +28,20 @@ pub struct GenesisConfig {
     pub execution_state_root: String,
     pub genesis_time: u64,
     pub genesis_validators_root: String,
-    pub guardian: String,
     pub head: u64,
     pub header: String,
-    pub helios_program_vkey: String,
+    pub helios_image_id: String,
     pub seconds_per_slot: u64,
     pub slots_per_epoch: u64,
     pub slots_per_period: u64,
     pub source_chain_id: u64,
     pub sync_committee_hash: String,
+    pub updaters: Vec<String>,
     pub verifier: String,
 }
 
 #[tokio::main]
 pub async fn main() -> Result<()> {
-    utils::setup_logger();
-
     let args = GenesisArgs::parse();
 
     // This fetches the .env file from the project root. If the command is invoked in the contracts/ directory,
@@ -58,20 +55,11 @@ pub async fn main() -> Result<()> {
         );
     }
 
-    let client = ProverClient::builder().cpu().build();
-    let (_pk, vk) = client.setup(HELIOS_ELF);
-
     let checkpoint;
     if let Some(temp_slot) = args.slot {
         checkpoint = get_checkpoint(temp_slot).await;
     } else {
         checkpoint = get_latest_checkpoint().await;
-    }
-    let sp1_prover = env::var("SP1_PROVER").unwrap();
-
-    let mut verifier = Address::ZERO;
-    if sp1_prover != "mock" {
-        verifier = env::var("SP1_VERIFIER_ADDRESS").unwrap().parse().unwrap();
     }
 
     let helios_client = get_client(checkpoint).await;
@@ -129,8 +117,9 @@ pub async fn main() -> Result<()> {
             .state_root()
     );
     genesis_config.head = head;
-    genesis_config.helios_program_vkey = vk.bytes32();
-    genesis_config.verifier = format!("0x{:x}", verifier);
+    genesis_config.helios_image_id =
+        B256::from_slice(Digest::from(R0VM_HELIOS_GUEST_ID).as_bytes()).to_string();
+    genesis_config.verifier = Address::ZERO.to_string();
 
     // Get the account associated with the private key.
     let private_key = env::var("PRIVATE_KEY").unwrap();
@@ -141,10 +130,10 @@ pub async fn main() -> Result<()> {
     // If the GUARDIAN_ADDRESS is not set, or is empty, the deployer address is used as the guardian address.
     let guardian = match env::var("GUARDIAN_ADDRESS") {
         Ok(guardian_addr) if !guardian_addr.is_empty() => guardian_addr,
-        _ => format!("0x{:x}", deployer_address),
+        _ => deployer_address.to_string(),
     };
 
-    genesis_config.guardian = guardian;
+    genesis_config.updaters = vec![guardian];
 
     write_genesis_config(&workspace_root, &genesis_config)?;
 
