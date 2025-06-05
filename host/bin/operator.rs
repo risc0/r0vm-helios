@@ -172,12 +172,7 @@ impl R0VMHeliosOperator {
             store: client.store.clone(),
             genesis_root: client.config.chain.genesis_root,
             forks: client.config.forks.clone(),
-            contract_storage_slots: ContractStorage {
-                address: todo!(),
-                expected_value: todo!(),
-                mpt_proof: todo!(),
-                storage_slots: todo!(),
-            },
+            contract_storage_slots: ContractStorage::default(),
         };
         let encoded_proof_inputs = serde_cbor::to_vec(&inputs)?;
 

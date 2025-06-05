@@ -16,9 +16,12 @@
     "incomplete-features"
   ],
   "rust-analyzer.linkedProjects": [
-    "program/Cargo.toml",
-    "script/Cargo.toml",
+    "host/Cargo.toml",
+    "methods/guest/Cargo.toml",
     "primitives/Cargo.toml"
   ],
-  "rust-analyzer.showUnlinkedFileNotification": false
+  "rust-analyzer.showUnlinkedFileNotification": false,
+  "rust-analyzer.check.extraEnv": {
+    "RISC0_SKIP_BUILD": "1",
+  }
 }

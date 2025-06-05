@@ -12,8 +12,8 @@ import {AccessControlEnumerable} from
 /// It also provides functionality to verify and store Ethereum storage slot values.
 /// Updater permissions are fixed at contract creation time and cannot be modified afterward.
 contract R0VMHelios is AccessControlEnumerable {
-    /// @notice The genesis validators root for the beacon chain
-    bytes32 public immutable GENESIS_VALIDATORS_ROOT;
+    /// @notice Commitment to the chain, defined as keccak256(genesis_root | cbor::encode(forks))
+    bytes32 public immutable CHAIN_COMMITMENT;
 
     /// @notice The timestamp at which the beacon chain genesis block was processed
     uint256 public immutable GENESIS_TIME;
@@ -77,6 +77,7 @@ contract R0VMHelios is AccessControlEnumerable {
         uint256 prevHead;
         bytes32 syncCommitteeHash;
         bytes32 startSyncCommitteeHash;
+        bytes32 chainCommitment;
         StorageSlot[] slots;
     }
 
@@ -84,7 +85,7 @@ contract R0VMHelios is AccessControlEnumerable {
     struct InitParams {
         bytes32 executionStateRoot;
         uint256 genesisTime;
-        bytes32 genesisValidatorsRoot;
+        bytes32 chainCommitment;
         uint256 head;
         bytes32 header;
         bytes32 heliosImageId;
@@ -114,12 +115,13 @@ contract R0VMHelios is AccessControlEnumerable {
     error PreviousHeadNotSet(uint256 slot);
     error PreviousHeadTooOld(uint256 slot);
     error NoUpdatersProvided();
+    error ChainCommitmentMismatch(bytes32 given, bytes32 expected);
 
     /// @notice Initializes the SP1Helios contract with the provided parameters
     /// @dev Sets up immutable contract state and grants the UPDATER_ROLE to the provided updaters
     /// @param params The initialization parameters
     constructor(InitParams memory params) {
-        GENESIS_VALIDATORS_ROOT = params.genesisValidatorsRoot;
+        CHAIN_COMMITMENT = params.chainCommitment;
         GENESIS_TIME = params.genesisTime;
         SECONDS_PER_SLOT = params.secondsPerSlot;
         SLOTS_PER_PERIOD = params.slotsPerPeriod;
@@ -172,6 +174,9 @@ contract R0VMHelios is AccessControlEnumerable {
         ProofOutputs memory po = abi.decode(journalData, (ProofOutputs));
         if (po.newHead <= fromHead) {
             revert SlotBehindHead(po.newHead);
+        }
+        if (po.chainCommitment != CHAIN_COMMITMENT) {
+            revert ChainCommitmentMismatch(po.chainCommitment, CHAIN_COMMITMENT);
         }
 
         uint256 currentPeriod = getSyncCommitteePeriod(fromHead);
