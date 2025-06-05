@@ -7,10 +7,10 @@ use alloy_trie::{proof, Nibbles};
 use helios_consensus_core::{
     apply_finality_update, apply_update, verify_finality_update, verify_update,
 };
-use risc0_zkvm::guest::env;
 use r0vm_helios_primitives::types::{
     ContractStorage, ProofInputs, ProofOutputs, VerifiedStorageSlot,
 };
+use risc0_zkvm::guest::env;
 use tree_hash::TreeHash;
 
 risc0_zkvm::guest::entry!(main);
